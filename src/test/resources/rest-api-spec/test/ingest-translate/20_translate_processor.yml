@@ -1,0 +1,39 @@
+---
+"Test translate processor with defaults":
+  - do:
+      ingest.put_pipeline:
+        id: "my_pipeline"
+        body:  >
+          {
+            "description" : "_description",
+            "processors" : [
+              {
+                "translate" : {
+                  "field" : "source_field",
+                  "target_field" : "target_field",
+                  "dictionary" : {
+                    "10" : "success",
+                    "20" : "fail"
+                  }
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: test
+        id: 1
+        pipeline: "my_pipeline"
+        body: {source_field: ["10", "20"]}
+
+  - do:
+      get:
+        index: test
+        type: test
+        id: 1
+  - match: { _source.source_field: ["10", "20"] }
+  - match: { _source.target_field: ["success", "fail"] }
+

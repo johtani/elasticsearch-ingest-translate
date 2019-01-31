@@ -1,0 +1,31 @@
+---
+"Test translate processor with simulate API":
+  - do:
+      ingest.put_pipeline:
+        id: "my_pipeline"
+        body:  >
+          {
+            "description" : "_description",
+            "processors" : [
+              {
+                "translate" : {
+                  "field" : "source_field",
+                  "target_field" : "target_field",
+                  "dictionary" : {
+                    "10" : "success",
+                    "20" : "fail"
+                  }
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      ingest.simulate:
+        id: "my_pipeline"
+        body: {docs: [ { _source: { source_field: "10" } } ] }
+
+  - length: { docs.0.doc._source: 2 }
+  - match: { docs.0.doc._source.source_field: "10" }
+  - match: { docs.0.doc._source.target_field: "success" }
